@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>忘年会お店投票</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏮</text></svg>" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #f4f3ee;
+    --surface: #ffffff;
+    --surface-2: #ece8dd;
+    --border: #ddd7c8;
+    --text: #211f2b;
+    --text-muted: #615d70;
+    --accent: #2c3c5c;
+    --accent-contrast: #ffffff;
+    --accent-2: #bf4630;
+    --accent-2-contrast: #ffffff;
+    --gold: #b6862f;
+    --success: #3c7a52;
+    --success-bg: #e4efe6;
+    --shadow: 0 1px 2px rgba(33,31,43,0.06), 0 6px 20px rgba(33,31,43,0.05);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14151e;
+      --surface: #1b1d29;
+      --surface-2: #242739;
+      --border: #343750;
+      --text: #ece7db;
+      --text-muted: #a6a1b8;
+      --accent: #7d9bd6;
+      --accent-contrast: #12141c;
+      --accent-2: #e9714c;
+      --accent-2-contrast: #12141c;
+      --gold: #dcae5c;
+      --success: #6bc48c;
+      --success-bg: #1f3128;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 26px rgba(0,0,0,0.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  header.page-head {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--accent-2);
+    font-weight: 700;
+  }
+  h1 {
+    font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+    font-weight: 700;
+    font-size: clamp(26px, 5vw, 36px);
+    margin: 0;
+    text-wrap: balance;
+  }
+  .lede {
+    color: var(--text-muted);
+    font-size: 14.5px;
+    max-width: 54ch;
+    margin: 0;
+  }
+  .rules {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .rule-chip {
+    font-size: 12.5px;
+    color: var(--accent);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-weight: 500;
+  }
+
+  section { margin-bottom: 36px; }
+  h2 {
+    font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  .section-sub {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin: 0 0 16px;
+  }
+
+  .name-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+    margin-bottom: 18px;
+  }
+  .name-card label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .name-card input[type="text"] {
+    width: 100%;
+    font: inherit;
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .name-card input[type="text"]:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .name-hint {
+    font-size: 12px;
+    color: var(--accent-2);
+    margin-top: 6px;
+    min-height: 1em;
+  }
+
+  .cards { display: flex; flex-direction: column; gap: 10px; }
+  .rcard {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+    text-align: left;
+  }
+  .rcard:hover { border-color: var(--accent); }
+  .rcard:active { transform: scale(0.997); }
+  .rcard.selected {
+    border-color: var(--accent-2);
+    background: color-mix(in srgb, var(--accent-2) 7%, var(--surface));
+  }
+  .rcard-main { flex: 1; min-width: 0; }
+  .rcard-name {
+    font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+    font-weight: 600;
+    font-size: 17px;
+    margin: 0 0 4px;
+  }
+  .rcard-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--text-muted); }
+  .rcard-meta span { background: var(--surface-2); border-radius: 999px; padding: 2px 9px; }
+  .rcard-link { font-size: 12.5px; color: var(--accent); text-decoration: none; display: inline-block; margin-top: 6px; }
+  .rcard-link:hover { text-decoration: underline; }
+  .vote-toggle {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text-muted);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .rcard.selected .vote-toggle {
+    background: var(--accent-2);
+    border-color: var(--accent-2);
+    color: var(--accent-2-contrast);
+  }
+
+  .vote-bar {
+    position: sticky;
+    bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-top: 16px;
+  }
+  .vote-count { font-size: 13px; color: var(--text-muted); }
+  .vote-count b { color: var(--text); font-variant-numeric: tabular-nums; }
+  button.primary {
+    font: inherit;
+    font-weight: 700;
+    font-size: 14.5px;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border: none;
+    border-radius: 10px;
+    padding: 11px 20px;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+  button.primary:hover { opacity: 0.88; }
+  button.primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .toast {
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--success-bg);
+    color: var(--success);
+    margin-top: 12px;
+    display: none;
+  }
+  .toast.show { display: block; }
+
+  .results { display: flex; flex-direction: column; gap: 10px; }
+  .rrow {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+  }
+  .rrow .rank {
+    font-family: "Shippori Mincho", serif;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .rrow.top .rank { color: var(--gold); }
+  .rrow .barwrap {
+    background: var(--surface-2);
+    border-radius: 8px;
+    height: 34px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .rrow .bar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: var(--accent);
+    border-radius: 8px 0 0 8px;
+    transition: width 0.4s ease;
+  }
+  .rrow.top .bar { background: var(--accent-2); }
+  .rrow .barlabel {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 12px;
+    font-size: 13.5px;
+    color: var(--text);
+  }
+  .rrow .count {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 14px;
+    min-width: 42px;
+    text-align: right;
+    color: var(--text-muted);
+  }
+  .rrow.top .count { color: var(--accent-2); }
+
+  details.add-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+  details.add-box summary {
+    cursor: pointer;
+    padding: 14px 18px;
+    font-weight: 600;
+    font-size: 14.5px;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  details.add-box summary::-webkit-details-marker { display: none; }
+  details.add-box summary::before {
+    content: "+";
+    font-size: 17px;
+    color: var(--accent-2);
+    font-weight: 700;
+  }
+  details.add-box[open] summary::before { content: "\2013"; }
+  .add-form { padding: 4px 18px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .add-form .field label { display: block; font-size: 12.5px; color: var(--text-muted); margin-bottom: 5px; }
+  .add-form input[type="text"], .add-form input[type="url"] {
+    width: 100%;
+    font: inherit;
+    font-size: 14.5px;
+    padding: 9px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .add-form .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .add-form .field.full { grid-column: 1 / -1; }
+  .add-note { font-size: 12px; color: var(--text-muted); }
+
+  .banner {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+  }
+  .banner b { color: var(--text); }
+
+  footer {
+    margin-top: 40px;
+    font-size: 12px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page-head">
+    <div class="eyebrow">社内アンケート</div>
+    <h1>忘年会お店投票🏮</h1>
+    <p class="lede">候補のお店に投票してください。投票が多い順に、幹事が予約を試みます。</p>
+    <div class="rules">
+      <span class="rule-chip">1人2票まで</span>
+      <span class="rule-chip">得票数が多い順に予約</span>
+      <span class="rule-chip">候補はあとから追加可</span>
+    </div>
+  </header>
+
+  <div id="errorBanner" class="banner" hidden>
+    データを読み込めませんでした。少し待ってからページを再読み込みしてください。
+  </div>
+
+  <section>
+    <div class="name-card">
+      <label for="nameInput">お名前</label>
+      <input id="nameInput" type="text" placeholder="例）山田 太郎" autocomplete="off" />
+      <div id="nameHint" class="name-hint"></div>
+    </div>
+
+    <h2>候補のお店</h2>
+    <p class="section-sub">気になるお店をタップして選択（最大2件）</p>
+    <div id="cards" class="cards"></div>
+
+    <div class="vote-bar">
+      <div class="vote-count"><b id="selCount">0</b> / 2 票 選択中</div>
+      <button id="submitBtn" class="primary" type="button" disabled>投票する</button>
+    </div>
+    <div id="toast" class="toast">投票を受け付けました。ありがとうございます！</div>
+  </section>
+
+  <section>
+    <h2>現在の投票状況</h2>
+    <p class="section-sub" id="totalVoters">読み込み中…</p>
+    <div id="results" class="results"></div>
+  </section>
+
+  <section>
+    <details class="add-box">
+      <summary>候補のお店を追加する</summary>
+      <form id="addForm" class="add-form">
+        <div class="field full">
+          <label for="addName">店名</label>
+          <input id="addName" type="text" required placeholder="例）串かつ だいぼん" />
+        </div>
+        <div class="field full">
+          <label for="addUrl">食べログURL</label>
+          <input id="addUrl" type="url" required placeholder="https://tabelog.com/..." />
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="addGenre">ジャンル（任意）</label>
+            <input id="addGenre" type="text" placeholder="例）焼き鳥" />
+          </div>
+          <div class="field">
+            <label for="addStation">最寄り駅（任意）</label>
+            <input id="addStation" type="text" placeholder="例）梅田駅" />
+          </div>
+        </div>
+        <div>
+          <button class="primary" type="submit">候補に追加</button>
+          <span id="addMsg" class="add-note"></span>
+        </div>
+      </form>
+    </details>
+  </section>
+
+  <footer>このページはリンクを知っている人なら誰でも、サインインなしで投票・閲覧・候補追加ができます。</footer>
+</div>
+
+<script>
+(function () {
+  // ↓↓↓ Google Apps Script をデプロイして取得したウェブアプリのURLに書き換えてください ↓↓↓
+  const API_URL = "https://script.google.com/macros/s/AKfycbzsT3MiHZ6DuPSFcOAzgEvK98g0YrwYcWGlSlWV-2gvtykSBDwaQR_zV4ltJvTL5rJLsw/exec";
+  // ↑↑↑ 例: https://script.google.com/macros/s/XXXXXXXX/exec ↑↑↑
+
+  const POLL_MS = 5000;
+
+  const $ = (sel) => document.querySelector(sel);
+  const cardsEl = $("#cards");
+  const resultsEl = $("#results");
+  const totalVotersEl = $("#totalVoters");
+  const nameInput = $("#nameInput");
+  const nameHint = $("#nameHint");
+  const selCountEl = $("#selCount");
+  const submitBtn = $("#submitBtn");
+  const toastEl = $("#toast");
+  const errorBanner = $("#errorBanner");
+  const addForm = $("#addForm");
+  const addMsg = $("#addMsg");
+
+  let restaurants = [];
+  let votes = [];
+  let selected = new Set();
+
+  function normalizeKey(name) {
+    return String(name).trim().toLowerCase();
+  }
+
+  async function apiGet() {
+    const res = await fetch(API_URL, { method: "GET" });
+    if (!res.ok) throw new Error("network error");
+    return res.json();
+  }
+
+  async function apiPost(payload) {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error("network error");
+    return res.json();
+  }
+
+  function applyState(data) {
+    restaurants = data.restaurants || [];
+    votes = data.votes || [];
+    renderCards();
+    renderResults();
+    applySavedVote();
+  }
+
+  function renderCards() {
+    const list = [...restaurants].sort((a, b) => String(a.addedAt || "").localeCompare(String(b.addedAt || "")));
+    cardsEl.innerHTML = "";
+    for (const r of list) {
+      const card = document.createElement("div");
+      card.className = "rcard" + (selected.has(r.id) ? " selected" : "");
+      card.innerHTML = `
+        <div class="rcard-main">
+          <p class="rcard-name">${escapeHtml(r.name)}</p>
+          <div class="rcard-meta">
+            ${r.genre ? `<span>${escapeHtml(r.genre)}</span>` : ""}
+            ${r.station ? `<span>${escapeHtml(r.station)}</span>` : ""}
+          </div>
+          <a class="rcard-link" href="${escapeAttr(r.url)}" target="_blank" rel="noopener noreferrer">食べログで見る →</a>
+        </div>
+        <div class="vote-toggle">${selected.has(r.id) ? "✓" : ""}</div>
+      `;
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("a")) return;
+        toggleSelect(r.id);
+      });
+      cardsEl.appendChild(card);
+    }
+  }
+
+  function toggleSelect(id) {
+    if (selected.has(id)) {
+      selected.delete(id);
+    } else {
+      if (selected.size >= 2) {
+        submitBtn.animate(
+          [{ transform: "translateX(0)" }, { transform: "translateX(-4px)" }, { transform: "translateX(4px)" }, { transform: "translateX(0)" }],
+          { duration: 220 }
+        );
+        return;
+      }
+      selected.add(id);
+    }
+    renderCards();
+    updateSelBar();
+  }
+
+  function updateSelBar() {
+    selCountEl.textContent = String(selected.size);
+    submitBtn.disabled = selected.size === 0 || !nameInput.value.trim();
+  }
+
+  function renderResults() {
+    const tally = new Map();
+    for (const r of restaurants) tally.set(r.id, 0);
+    for (const v of votes) {
+      for (const id of v.restaurantIds || []) {
+        if (tally.has(id)) tally.set(id, tally.get(id) + 1);
+      }
+    }
+    const rows = [...tally.entries()]
+      .map(([id, count]) => ({ id, count, name: restaurants.find((r) => r.id === id)?.name || "?" }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "ja"));
+
+    const maxCount = Math.max(1, ...rows.map((r) => r.count));
+    totalVotersEl.textContent = votes.length === 0 ? "まだ投票がありません" : `${votes.length} 人が投票済み`;
+
+    resultsEl.innerHTML = "";
+    let rank = 0;
+    let prevCount = null;
+    rows.forEach((row, i) => {
+      if (row.count !== prevCount) rank = i + 1;
+      prevCount = row.count;
+      const div = document.createElement("div");
+      div.className = "rrow" + (rank === 1 && row.count > 0 ? " top" : "");
+      const pct = row.count === 0 ? 0 : Math.max(8, (row.count / maxCount) * 100);
+      div.innerHTML = `
+        <div class="rank">${rank}</div>
+        <div class="barwrap"><div class="bar" style="width:${pct}%"></div><div class="barlabel">${escapeHtml(row.name)}</div></div>
+        <div class="count">${row.count}票</div>
+      `;
+      resultsEl.appendChild(div);
+    });
+  }
+
+  function applySavedVote() {
+    const name = nameInput.value.trim();
+    if (!name) { nameHint.textContent = ""; return; }
+    const key = normalizeKey(name);
+    const v = votes.find((v) => normalizeKey(v.name) === key);
+    if (v && v.restaurantIds) {
+      selected = new Set(v.restaurantIds);
+      renderCards();
+      updateSelBar();
+      nameHint.textContent = "前回の投票を表示しています。変更する場合は選び直して「投票する」を押してください。";
+    } else {
+      nameHint.textContent = "";
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function escapeAttr(s) { return escapeHtml(s); }
+
+  async function refresh() {
+    try {
+      const data = await apiGet();
+      errorBanner.hidden = true;
+      applyState(data);
+    } catch (e) {
+      errorBanner.hidden = false;
+    }
+  }
+
+  function init() {
+    if (API_URL.indexOf("YOUR_WEB_APP_URL_HERE") !== -1) {
+      errorBanner.hidden = false;
+      errorBanner.innerHTML = "設定が未完了です。<b>index.html内のAPI_URL</b>にGoogle Apps ScriptのウェブアプリURLを設定してください。";
+      return;
+    }
+
+    const savedName = (() => { try { return localStorage.getItem("bonenkai_name") || ""; } catch { return ""; } })();
+    if (savedName) nameInput.value = savedName;
+
+    refresh();
+    setInterval(refresh, POLL_MS);
+
+    nameInput.addEventListener("input", updateSelBar);
+    nameInput.addEventListener("blur", applySavedVote);
+
+    submitBtn.addEventListener("click", async () => {
+      const name = nameInput.value.trim();
+      if (!name || selected.size === 0) return;
+      submitBtn.disabled = true;
+      try {
+        const data = await apiPost({ action: "vote", name, restaurantIds: [...selected] });
+        if (data.result && data.result.ok === false) throw new Error(data.result.error);
+        applyState(data);
+        try { localStorage.setItem("bonenkai_name", name); } catch {}
+        toastEl.classList.add("show");
+        setTimeout(() => toastEl.classList.remove("show"), 3000);
+      } catch (e) {
+        alert("投票の送信に失敗しました。もう一度お試しください。");
+      } finally {
+        submitBtn.disabled = selected.size === 0 || !nameInput.value.trim();
+      }
+    });
+
+    addForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#addName").value.trim();
+      const url = $("#addUrl").value.trim();
+      const genre = $("#addGenre").value.trim();
+      const station = $("#addStation").value.trim();
+      if (!name || !url) return;
+      addMsg.textContent = "追加中…";
+      try {
+        const data = await apiPost({ action: "addRestaurant", name, url, genre, station });
+        if (data.result && data.result.ok === false) {
+          addMsg.textContent = String(data.result.error).indexOf("duplicate") !== -1 ? "すでに候補に追加されています。" : "追加に失敗しました。";
+          return;
+        }
+        applyState(data);
+        addForm.reset();
+        addMsg.textContent = "追加しました！";
+        setTimeout(() => { addMsg.textContent = ""; }, 3000);
+      } catch (err) {
+        addMsg.textContent = "追加に失敗しました。もう一度お試しください。";
+      }
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
