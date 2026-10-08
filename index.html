@@ -177,8 +177,21 @@
   }
   .rcard-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--text-muted); }
   .rcard-meta span { background: var(--surface-2); border-radius: 999px; padding: 2px 9px; }
+  .rcard-meta .rating { color: var(--gold); font-weight: 700; background: color-mix(in srgb, var(--gold) 14%, var(--surface-2)); }
   .rcard-link { font-size: 12.5px; color: var(--accent); text-decoration: none; display: inline-block; margin-top: 6px; }
   .rcard-link:hover { text-decoration: underline; }
+  .rcard-actions { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+  .rcard-actions .rcard-link { margin-top: 0; }
+  .rcard-delete {
+    font: inherit;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .rcard-delete:hover { color: var(--accent-2); text-decoration: underline; }
   .vote-toggle {
     flex-shrink: 0;
     width: 40px;
@@ -330,7 +343,9 @@
   }
   .add-form .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .add-form .field.full { grid-column: 1 / -1; }
-  .add-note { font-size: 12px; color: var(--text-muted); }
+  .add-note { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; }
+  #manualFields { display: flex; flex-direction: column; gap: 12px; }
+  #manualFields .manual-lead { margin: 0; color: var(--accent-2); }
 
   .banner {
     background: var(--surface-2);
@@ -400,21 +415,29 @@
       <summary>候補のお店を追加する</summary>
       <form id="addForm" class="add-form">
         <div class="field full">
-          <label for="addName">店名</label>
-          <input id="addName" type="text" required placeholder="例）串かつ だいぼん" />
-        </div>
-        <div class="field full">
           <label for="addUrl">食べログURL</label>
-          <input id="addUrl" type="url" required placeholder="https://tabelog.com/..." />
+          <input id="addUrl" type="url" required placeholder="https://tabelog.com/osaka/..." />
+          <p class="add-note">URLを貼るだけで、店名・ジャンル・最寄り駅・評価を自動で取得します。</p>
         </div>
-        <div class="row2">
-          <div class="field">
-            <label for="addGenre">ジャンル（任意）</label>
-            <input id="addGenre" type="text" placeholder="例）焼き鳥" />
+        <div id="manualFields" hidden>
+          <p class="add-note manual-lead">自動取得できなかったため、店名を入力してください（他は任意）。</p>
+          <div class="field full">
+            <label for="addName">店名</label>
+            <input id="addName" type="text" placeholder="例）串かつ だいぼん" />
           </div>
-          <div class="field">
-            <label for="addStation">最寄り駅（任意）</label>
-            <input id="addStation" type="text" placeholder="例）梅田駅" />
+          <div class="row2">
+            <div class="field">
+              <label for="addGenre">ジャンル（任意）</label>
+              <input id="addGenre" type="text" placeholder="例）焼き鳥" />
+            </div>
+            <div class="field">
+              <label for="addStation">最寄り駅（任意）</label>
+              <input id="addStation" type="text" placeholder="例）梅田駅" />
+            </div>
+          </div>
+          <div class="field full">
+            <label for="addRating">食べログ評価（任意）</label>
+            <input id="addRating" type="text" inputmode="decimal" placeholder="例）3.75" />
           </div>
         </div>
         <div>
@@ -448,6 +471,7 @@
   const errorBanner = $("#errorBanner");
   const addForm = $("#addForm");
   const addMsg = $("#addMsg");
+  const manualFields = $("#manualFields");
 
   let restaurants = [];
   let votes = [];
@@ -491,18 +515,39 @@
         <div class="rcard-main">
           <p class="rcard-name">${escapeHtml(r.name)}</p>
           <div class="rcard-meta">
+            ${r.rating ? `<span class="rating">★ ${escapeHtml(r.rating)}</span>` : ""}
             ${r.genre ? `<span>${escapeHtml(r.genre)}</span>` : ""}
             ${r.station ? `<span>${escapeHtml(r.station)}</span>` : ""}
           </div>
-          <a class="rcard-link" href="${escapeAttr(r.url)}" target="_blank" rel="noopener noreferrer">食べログで見る →</a>
+          <div class="rcard-actions">
+            <a class="rcard-link" href="${escapeAttr(r.url)}" target="_blank" rel="noopener noreferrer">食べログで見る →</a>
+            <button type="button" class="rcard-delete">削除</button>
+          </div>
         </div>
         <div class="vote-toggle">${selected.has(r.id) ? "✓" : ""}</div>
       `;
+      card.querySelector(".rcard-delete").addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteRestaurant(r);
+      });
       card.addEventListener("click", (e) => {
         if (e.target.closest("a")) return;
         toggleSelect(r.id);
       });
       cardsEl.appendChild(card);
+    }
+  }
+
+  async function deleteRestaurant(r) {
+    if (!confirm(`「${r.name}」を候補から削除しますか？\nこのお店への投票も取り消されます。`)) return;
+    try {
+      const data = await apiPost({ action: "deleteRestaurant", id: r.id });
+      if (data.result && data.result.ok === false) throw new Error(data.result.error);
+      selected.delete(r.id);
+      applyState(data);
+      updateSelBar();
+    } catch (e) {
+      alert("削除に失敗しました。もう一度お試しください。");
     }
   }
 
@@ -591,6 +636,14 @@
     }
   }
 
+  async function fillMissingRatings() {
+    if (!restaurants.some((r) => !r.rating)) return;
+    try {
+      const data = await apiPost({ action: "fillRatings" });
+      applyState(data);
+    } catch (e) {}
+  }
+
   function init() {
     if (API_URL.indexOf("YOUR_WEB_APP_URL_HERE") !== -1) {
       errorBanner.hidden = false;
@@ -601,7 +654,7 @@
     const savedName = (() => { try { return localStorage.getItem("bonenkai_name") || ""; } catch { return ""; } })();
     if (savedName) nameInput.value = savedName;
 
-    refresh();
+    refresh().then(fillMissingRatings);
     setInterval(refresh, POLL_MS);
 
     nameInput.addEventListener("input", updateSelBar);
@@ -627,24 +680,39 @@
 
     addForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const name = $("#addName").value.trim();
       const url = $("#addUrl").value.trim();
+      const name = $("#addName").value.trim();
       const genre = $("#addGenre").value.trim();
       const station = $("#addStation").value.trim();
-      if (!name || !url) return;
-      addMsg.textContent = "追加中…";
+      const rating = $("#addRating").value.trim();
+      if (!url) return;
+      const addBtn = addForm.querySelector("button[type=submit]");
+      addBtn.disabled = true;
+      addMsg.textContent = " 食べログから情報を取得中…";
       try {
-        const data = await apiPost({ action: "addRestaurant", name, url, genre, station });
+        const data = await apiPost({ action: "addRestaurant", url, name, genre, station, rating });
         if (data.result && data.result.ok === false) {
-          addMsg.textContent = String(data.result.error).indexOf("duplicate") !== -1 ? "すでに候補に追加されています。" : "追加に失敗しました。";
+          const err = String(data.result.error);
+          if (err.indexOf("duplicate") !== -1) {
+            addMsg.textContent = " すでに候補に追加されています。";
+          } else if (err.indexOf("fetch_failed") !== -1) {
+            manualFields.hidden = false;
+            $("#addName").focus();
+            addMsg.textContent = " 自動取得できませんでした。店名を入力してもう一度追加してください。";
+          } else {
+            addMsg.textContent = " 追加に失敗しました。";
+          }
           return;
         }
         applyState(data);
         addForm.reset();
-        addMsg.textContent = "追加しました！";
+        manualFields.hidden = true;
+        addMsg.textContent = " 追加しました！";
         setTimeout(() => { addMsg.textContent = ""; }, 3000);
       } catch (err) {
-        addMsg.textContent = "追加に失敗しました。もう一度お試しください。";
+        addMsg.textContent = " 追加に失敗しました。もう一度お試しください。";
+      } finally {
+        addBtn.disabled = false;
       }
     });
   }
